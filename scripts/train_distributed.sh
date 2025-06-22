@@ -16,7 +16,7 @@ BATCH_SIZE=2048  # Global batch size - aggressive for fast training
 MICRO_BATCH_SIZE=32  # Per-GPU micro batch size - standard for pretraining
 SEQ_LENGTH=8192  # Long sequences for better context learning  
 MAX_EPOCHS=1  # Train for 1 epoch
-LEARNING_RATE=8e-4  # Scaled up for very large batch size
+LEARNING_RATE=3e-4  # Scaled up for very large batch size
 
 # Paths
 DATA_DIR="pretrain_dataset"
