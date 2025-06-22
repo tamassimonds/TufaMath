@@ -33,7 +33,7 @@ class TrainingConfig:
     micro_batch_size: int = 32  # Per-GPU micro batch size - standard for pretraining
     max_epochs: int = 1
     max_steps: Optional[int] = None  # Will be calculated from epochs
-    learning_rate: float = 8e-4  # Scaled for very large batch size
+    learning_rate: float = 3e-4  # Base learning rate
     min_learning_rate: float = 6e-5
     weight_decay: float = 0.1
     warmup_ratio: float = 0.05  # 5% of training for warmup
@@ -64,10 +64,9 @@ class TrainingConfig:
     mixed_precision: bool = True
     
     def __post_init__(self):
-        # Calculate gradient accumulation steps
-        # Global batch = micro_batch_size * num_gpus * gradient_accumulation_steps
-        self.gradient_accumulation_steps = self.batch_size // (self.micro_batch_size * 8)  # 8 GPUs
-        assert self.gradient_accumulation_steps >= 1, f"Batch size {self.batch_size} too small for {self.micro_batch_size} micro batch on 8 GPUs"
+        # Calculate gradient accumulation steps - will be dynamically set based on world_size
+        # This will be recalculated in setup based on actual world_size
+        pass
         
 
 class TrainingState:
@@ -137,9 +136,11 @@ def setup_model_and_optimizer(config: TrainingConfig, device):
             buffer_dtype=torch.bfloat16,
         )
     
-    auto_wrap_policy = transformer_auto_wrap_policy(
-        transformer_layer_cls={TransformerBlock},
-    )
+    def auto_wrap_policy(module, recurse, nonwrapped_numel):
+        return transformer_auto_wrap_policy(
+            module, recurse, nonwrapped_numel, 
+            transformer_layer_cls={TransformerBlock}
+        )
     
     model = FSDP(
         model,
@@ -305,8 +306,17 @@ def main():
     rank, world_size, local_rank = setup_distributed()
     device = torch.cuda.current_device()
     
-    # Load config
+    # Load config and adjust for actual world size
     config = TrainingConfig()
+    
+    # Calculate gradient accumulation steps based on actual world size
+    config.gradient_accumulation_steps = config.batch_size // (config.micro_batch_size * world_size)
+    assert config.gradient_accumulation_steps >= 1, f"Batch size {config.batch_size} too small for {config.micro_batch_size} micro batch on {world_size} GPUs"
+    
+    if rank == 0:
+        logging.info(f"Gradient accumulation steps: {config.gradient_accumulation_steps}")
+        logging.info(f"Effective batch size per GPU: {config.micro_batch_size * config.gradient_accumulation_steps}")
+    
     training_state = TrainingState(config)
     
     # Initialize wandb
