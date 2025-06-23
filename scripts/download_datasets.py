@@ -18,7 +18,7 @@ from create_dataset import CORPORA
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def download_with_retry(hf_id, config=None, split="train", max_retries=5, delay=30):
+def download_with_retry(hf_id, config=None, split="train", max_retries=1, delay=10):
     """Download dataset with exponential backoff retry logic"""
     
     for attempt in range(max_retries):

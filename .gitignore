@@ -10,3 +10,5 @@ wheels/
 # Virtual environments
 .venv
 set_api_keys.sh
+
+uv.lock
