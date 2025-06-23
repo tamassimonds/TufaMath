@@ -30,8 +30,8 @@ class TrainingConfig:
     model_config: ModelConfig = field(default_factory=ModelConfig)
     
     # Training
-    batch_size: int = 2048  # Global batch size optimized for 8xH100
-    micro_batch_size: int = 32  # Per-GPU micro batch size - standard for pretraining
+    batch_size: int = 1024  # Global batch size reduced for memory
+    micro_batch_size: int = 16  # Per-GPU micro batch size - reduced for memory
     max_epochs: int = 1
     max_steps: Optional[int] = None  # Will be calculated from epochs
     learning_rate: float = 6e-4  # Scaled for large batch size
@@ -116,6 +116,9 @@ def setup_model_and_optimizer(config: TrainingConfig, device):
     
     # Create model
     model = Qwen2ForCausalLM(config.model_config)
+    
+    # Enable gradient checkpointing for memory savings
+    model.model.gradient_checkpointing = True
     
     # Initialize weights
     def init_weights(module):
