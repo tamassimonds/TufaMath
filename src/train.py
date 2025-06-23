@@ -61,7 +61,7 @@ class TrainingConfig:
     wandb_run_name: Optional[str] = None
     
     # System
-    compile_model: bool = True
+    compile_model: bool = False  # Disabled due to FSDP + BF16 compatibility issues
     mixed_precision: bool = True
     
     def __post_init__(self):
