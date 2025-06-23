@@ -21,38 +21,38 @@ OUTPUT_DIR    = Path("pretrain_dataset")   # ⬅️ change as needed
 # 80 % maths / reasoning • 20 % clean general text
 CORPORA = [
     # Dense informal maths (Apache-2.0, 14.7 B tok total)
-    dict(hf_id="open-web-math/open-web-math",       split="train",
-         cap=6_000_000_000),     # 6 B :contentReference[oaicite:0]{index=0}
+    # dict(hf_id="open-web-math/open-web-math",       split="train",
+    #      cap=6_000_000_000),     # 6 B :contentReference[oaicite:0]{index=0}
 
-    # Formal proofs & theorem libs (Apache-2.0, 8.3 B tok)
-    dict(hf_id="hoskinson-center/proof-pile",       split="train",
-         cap=2_000_000_000),     # 2 B :contentReference[oaicite:1]{index=1}
+    # # Formal proofs & theorem libs (Apache-2.0, 8.3 B tok)
+    # dict(hf_id="hoskinson-center/proof-pile",       split="train",
+    #      cap=2_000_000_000),     # 2 B :contentReference[oaicite:1]{index=1}
 
-    # arXiv maths slice of Dolma (ODC-BY)
-    dict(hf_id="allenai/dolma",                     split="train",
-         cap=3_000_000_000,
-         filter=lambda x: x["meta"].get("category") == "math"),  # 3 B :contentReference[oaicite:2]{index=2}
-
-    # Permissive math-centric code (REMOVED - gated dataset)
-    # dict(hf_id="bigcode/the-stack-v2",              split="data",
+    # # arXiv maths slice of Dolma (ODC-BY)
+    # dict(hf_id="allenai/dolma",                     split="train",
     #      cap=3_000_000_000,
-    #      filter=lambda x: x.get("lang") in {"python", "julia", "rust"}),  # 3 B :contentReference[oaicite:3]{index=3}
+    #      filter=lambda x: x["meta"].get("category") == "math"),  # 3 B :contentReference[oaicite:2]{index=2}
 
-    # Human-written CoT & PoT (MIT)
-    dict(hf_id="TIGER-Lab/MathInstruct",            split="train",
-         cap=2_000_000_000),     # 2 B :contentReference[oaicite:4]{index=4}
+    # # Permissive math-centric code (REMOVED - gated dataset)
+    # # dict(hf_id="bigcode/the-stack-v2",              split="data",
+    # #      cap=3_000_000_000,
+    # #      filter=lambda x: x.get("lang") in {"python", "julia", "rust"}),  # 3 B :contentReference[oaicite:3]{index=3}
 
-    # NVIDIA OpenMathReasoning (MIT; 3.2 M CoT traces)
-    dict(hf_id="nvidia/OpenMathReasoning",          split="cot",
-         cap=3_000_000_000),     # 3 B :contentReference[oaicite:5]{index=5}
+    # # Human-written CoT & PoT (MIT)
+    # dict(hf_id="TIGER-Lab/MathInstruct",            split="train",
+    #      cap=2_000_000_000),     # 2 B :contentReference[oaicite:4]{index=4}
 
-    # Generic multi-domain CoT collection (CC-BY-4.0) — ↓ to 1 B
-    dict(hf_id="pharaouk/CoT-Collection",           split="train",
-         cap=1_000_000_000),     # 1 B :contentReference[oaicite:6]{index=6}
+    # # NVIDIA OpenMathReasoning (MIT; 3.2 M CoT traces)
+    # dict(hf_id="nvidia/OpenMathReasoning",          split="cot",
+    #      cap=3_000_000_000),     # 3 B :contentReference[oaicite:5]{index=5}
 
-    # ★ NEW ★ DeepSeek-R1 distilled reasoning (CC-BY-NC-4.0)
-    dict(hf_id="a-m-team/AM-DeepSeek-R1-Distilled-1.4M", split="train",
-         config="am_0.9M", cap=3_000_000_000),     # ~1 B (oversample allowed) :contentReference[oaicite:7]{index=7}
+    # # Generic multi-domain CoT collection (CC-BY-4.0) — ↓ to 1 B
+    # dict(hf_id="pharaouk/CoT-Collection",           split="train",
+    #      cap=1_000_000_000),     # 1 B :contentReference[oaicite:6]{index=6}
+
+    # # ★ NEW ★ DeepSeek-R1 distilled reasoning (CC-BY-NC-4.0)
+    # dict(hf_id="a-m-team/AM-DeepSeek-R1-Distilled-1.4M", split="train",
+    #      config="am_0.9M", cap=3_000_000_000),     # ~1 B (oversample allowed) :contentReference[oaicite:7]{index=7}
 
     # Dialogue / alignment (UltraChat 200 k, MIT)
     dict(hf_id="HuggingFaceH4/ultrachat_200k",      split="train_sft",
