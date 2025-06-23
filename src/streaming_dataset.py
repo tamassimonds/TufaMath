@@ -112,10 +112,19 @@ class StreamingPretrainDataset(IterableDataset):
                 print(f"  Applying filter to {spec['hf_id']}")
                 ds = ds.filter(spec["filter"])
             
-            # Add tokenization and length calculation
+            # Add tokenization and length calculation with explicit features
+            from datasets import Features, Sequence, Value
+            
+            # Define explicit output features
+            output_features = Features({
+                'input_ids': Sequence(Value('int64')),
+                'attention_mask': Sequence(Value('int64'))
+            })
+            
             ds = ds.map(
                 partial(self._tokenize_and_format, cap=spec["cap"]),
-                remove_columns=ds.column_names
+                remove_columns=ds.column_names,
+                features=output_features
             )
             
             # Don't artificially limit the dataset - let it stream naturally
@@ -137,7 +146,11 @@ class StreamingPretrainDataset(IterableDataset):
                     break
         
         if not text:
-            return {"input_ids": [], "attention_mask": []}
+            # Return properly padded empty sequence
+            return {
+                "input_ids": [self.tokenizer.pad_token_id] * self.seq_length,
+                "attention_mask": [0] * self.seq_length
+            }
         
         # Tokenize
         tokens = self.tokenizer.encode(text, add_special_tokens=False)
@@ -145,22 +158,22 @@ class StreamingPretrainDataset(IterableDataset):
         # Add EOS token
         tokens.append(self.tokenizer.eos_token_id)
         
-        # Split into chunks if too long
-        chunks = []
-        for i in range(0, len(tokens), self.seq_length):
-            chunk = tokens[i:i + self.seq_length]
-            
-            # Pad if necessary
-            if len(chunk) < self.seq_length:
-                chunk.extend([self.tokenizer.pad_token_id] * (self.seq_length - len(chunk)))
-            
-            chunks.append({
-                "input_ids": chunk,
-                "attention_mask": [1 if token_id != self.tokenizer.pad_token_id else 0 
-                                 for token_id in chunk]
-            })
+        # Take only first seq_length tokens
+        if len(tokens) > self.seq_length:
+            tokens = tokens[:self.seq_length]
         
-        return chunks[0] if chunks else {"input_ids": [], "attention_mask": []}
+        # Pad if necessary
+        if len(tokens) < self.seq_length:
+            tokens.extend([self.tokenizer.pad_token_id] * (self.seq_length - len(tokens)))
+        
+        # Create attention mask
+        attention_mask = [1 if token_id != self.tokenizer.pad_token_id else 0 
+                         for token_id in tokens]
+        
+        return {
+            "input_ids": tokens,
+            "attention_mask": attention_mask
+        }
     
     def __iter__(self):
         """Iterate through the interleaved streams - cycle infinitely"""
