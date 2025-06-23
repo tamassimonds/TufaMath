@@ -52,15 +52,15 @@ CORPORA = [
 
     # ★ NEW ★ DeepSeek-R1 distilled reasoning (CC-BY-NC-4.0)
     dict(hf_id="a-m-team/AM-DeepSeek-R1-Distilled-1.4M", split="train",
-         config="am_0.9M", cap=1_000_000_000),     # ~1 B (oversample allowed) :contentReference[oaicite:7]{index=7}
+         config="am_0.9M", cap=3_000_000_000),     # ~1 B (oversample allowed) :contentReference[oaicite:7]{index=7}
 
     # Dialogue / alignment (UltraChat 200 k, MIT)
     dict(hf_id="HuggingFaceH4/ultrachat_200k",      split="train_sft",
          cap=2_000_000_000),     # 2 B :contentReference[oaicite:8]{index=8}
 
-    # High-quality web fluency buffer (FineWeb HQ, ODC-BY)
-    dict(hf_id="HuggingFaceFW/fineweb",             split="hq",
-         cap=12_000_000_000,
+    # High-quality web fluency buffer (FineWeb, ODC-BY)
+    dict(hf_id="HuggingFaceFW/fineweb",             split="train",
+         cap=7_000_000_000,
          filter=lambda x: x.get("language") == "en"),  # 7 B :contentReference[oaicite:9]{index=9}
 ]
 # Total: 30 B tokens
