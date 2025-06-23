@@ -11,18 +11,21 @@ export WORLD_SIZE=8
 export MASTER_ADDR=localhost
 export MASTER_PORT=12355
 
+# Memory optimization
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
 # Wandb configuration - set your API key here or export it beforehand
 # export WANDB_API_KEY="your_api_key_here"  # Uncomment and set your key
 # Disable wandb interactive prompts
 export WANDB_MODE="online"
 export WANDB_CONSOLE="off"
 
-# Training parameters optimized for 8xH100
-BATCH_SIZE=1024  # Global batch size - aggressive for fast training
-MICRO_BATCH_SIZE=16  # Per-GPU micro batch size - standard for pretraining
-SEQ_LENGTH=2048  # Context length for H100 memory
+# Training parameters - reduced for memory constraints
+BATCH_SIZE=512  # Global batch size - reduced for memory
+MICRO_BATCH_SIZE=8  # Per-GPU micro batch size - reduced for memory
+SEQ_LENGTH=1024  # Context length - reduced for memory
 MAX_EPOCHS=1  # Train for 1 epoch
-LEARNING_RATE=4e-4  # Scaled up for large batch size
+LEARNING_RATE=3e-4  # Scaled for batch size
 
 # Paths
 DATA_DIR="pretrain_dataset"
@@ -52,5 +55,4 @@ torchrun \
     --data_dir=$DATA_DIR \
     --checkpoint_dir=$CHECKPOINT_DIR \
     --wandb_project=$WANDB_PROJECT \
-    --compile_model \
     --mixed_precision

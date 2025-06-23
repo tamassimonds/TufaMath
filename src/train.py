@@ -30,12 +30,12 @@ class TrainingConfig:
     model_config: ModelConfig = field(default_factory=ModelConfig)
     
     # Training
-    batch_size: int = 1024  # Global batch size reduced for memory
-    micro_batch_size: int = 16  # Per-GPU micro batch size - reduced for memory
+    batch_size: int = 512  # Global batch size - drastically reduced for memory
+    micro_batch_size: int = 8  # Per-GPU micro batch size - drastically reduced
     max_epochs: int = 1
     max_steps: Optional[int] = None  # Will be calculated from epochs
-    learning_rate: float = 6e-4  # Scaled for large batch size
-    min_learning_rate: float = 6e-5
+    learning_rate: float = 3e-4  # Scaled for batch size
+    min_learning_rate: float = 3e-5
     weight_decay: float = 0.1
     warmup_ratio: float = 0.05  # 5% of training for warmup
     
@@ -46,7 +46,7 @@ class TrainingConfig:
     eps: float = 1e-8
     
     # Data
-    seq_length: int = 4096  # Optimized for H100 memory
+    seq_length: int = 1024  # Drastically reduced for memory constraints
     data_dir: str = "pretrain_dataset"
     
     # Checkpointing
