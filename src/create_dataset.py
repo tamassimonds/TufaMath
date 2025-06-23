@@ -33,10 +33,10 @@ CORPORA = [
          cap=3_000_000_000,
          filter=lambda x: x["meta"].get("category") == "math"),  # 3 B :contentReference[oaicite:2]{index=2}
 
-    # Permissive math-centric code (Stack v2 near-dedup)
-    dict(hf_id="bigcode/the-stack-v2",              split="data",
-         cap=3_000_000_000,
-         filter=lambda x: x.get("lang") in {"python", "julia", "rust"}),  # 3 B :contentReference[oaicite:3]{index=3}
+    # Permissive math-centric code (REMOVED - gated dataset)
+    # dict(hf_id="bigcode/the-stack-v2",              split="data",
+    #      cap=3_000_000_000,
+    #      filter=lambda x: x.get("lang") in {"python", "julia", "rust"}),  # 3 B :contentReference[oaicite:3]{index=3}
 
     # Human-written CoT & PoT (MIT)
     dict(hf_id="TIGER-Lab/MathInstruct",            split="train",

@@ -13,7 +13,9 @@ export MASTER_PORT=12355
 
 # Wandb configuration - set your API key here or export it beforehand
 # export WANDB_API_KEY="your_api_key_here"  # Uncomment and set your key
-# Or just make sure it's already set in your environment
+# Disable wandb interactive prompts
+export WANDB_MODE="online"
+export WANDB_CONSOLE="off"
 
 # Training parameters optimized for 8xH100
 BATCH_SIZE=2048  # Global batch size - aggressive for fast training

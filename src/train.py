@@ -321,10 +321,15 @@ def main():
     
     # Initialize wandb
     if rank == 0:
+        # Set wandb mode to online and disable interactive prompts
+        os.environ["WANDB_MODE"] = "online"
+        os.environ["WANDB_CONSOLE"] = "off"
+        
         wandb.init(
             project=config.wandb_project,
             name=config.wandb_run_name,
             config=config.__dict__,
+            settings=wandb.Settings(console="off")
         )
     
     # Setup tokenizer - match the one used in create_dataset.py
