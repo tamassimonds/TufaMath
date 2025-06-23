@@ -18,11 +18,11 @@ export WANDB_MODE="online"
 export WANDB_CONSOLE="off"
 
 # Training parameters optimized for 8xH100
-BATCH_SIZE=2048  # Global batch size - aggressive for fast training
-MICRO_BATCH_SIZE=32  # Per-GPU micro batch size - standard for pretraining
-SEQ_LENGTH=4096  # Context length for H100 memory
+BATCH_SIZE=1024  # Global batch size - aggressive for fast training
+MICRO_BATCH_SIZE=16  # Per-GPU micro batch size - standard for pretraining
+SEQ_LENGTH=2048  # Context length for H100 memory
 MAX_EPOCHS=1  # Train for 1 epoch
-LEARNING_RATE=6e-4  # Scaled up for large batch size
+LEARNING_RATE=4e-4  # Scaled up for large batch size
 
 # Paths
 DATA_DIR="pretrain_dataset"
