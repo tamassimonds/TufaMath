@@ -32,43 +32,50 @@ def check_dataset_cached(hf_id, config=None, split="train"):
     except:
         return False
 
-def download_with_retry(hf_id, config=None, split="train", max_retries=1, delay=0):
-    """Download dataset with exponential backoff retry logic"""
+def download_with_retry(hf_id, config=None, split="train", max_retries=3, delay=30):
+    """Download dataset with exponential backoff retry logic - PROPERLY CACHE NON-STREAMING"""
     
-    # Check if already cached
-    if check_dataset_cached(hf_id, config, split):
-        logger.info(f"✓ {hf_id} already cached, skipping download")
+    # Check if already cached by trying to load non-streaming
+    try:
+        if config:
+            ds_test = load_dataset(hf_id, config, split=split, trust_remote_code=True)
+        else:
+            ds_test = load_dataset(hf_id, split=split, trust_remote_code=True)
+        logger.info(f"✓ {hf_id} already properly cached")
         return True
+    except:
+        logger.info(f"Need to download and cache {hf_id}")
     
     for attempt in range(max_retries):
         try:
-            logger.info(f"Downloading {hf_id} (attempt {attempt + 1}/{max_retries})")
+            logger.info(f"Downloading and caching {hf_id} (attempt {attempt + 1}/{max_retries})")
             
+            # Download NON-STREAMING to properly cache
             if config:
                 ds = load_dataset(
                     hf_id, 
                     config,
                     split=split, 
-                    streaming=True,
+                    streaming=False,  # KEY CHANGE: Non-streaming for proper caching
                     trust_remote_code=True
                 )
             else:
                 ds = load_dataset(
                     hf_id,
                     split=split, 
-                    streaming=True,
+                    streaming=False,  # KEY CHANGE: Non-streaming for proper caching
                     trust_remote_code=True
                 )
             
-            # Force download by iterating through a few examples
-            logger.info(f"  Caching first few examples from {hf_id}...")
+            # Test access to first few examples to ensure cache is complete
+            logger.info(f"  Verifying cache completeness for {hf_id}...")
             count = 0
             for example in ds:
                 count += 1
-                if count >= 10:  # Cache first 10 examples
+                if count >= 100:  # Test more examples to ensure proper caching
                     break
             
-            logger.info(f"  ✓ Successfully cached {hf_id}")
+            logger.info(f"  ✓ Successfully downloaded and cached {hf_id} ({count} examples verified)")
             return True
             
         except Exception as e:

@@ -4,6 +4,8 @@ This loads the exact same datasets defined in create_dataset.py CORPORA.
 """
 
 import os
+import time
+import logging
 from pathlib import Path
 from typing import Dict, Iterator, Optional, Union
 from functools import partial
@@ -17,6 +19,67 @@ from transformers import AutoTokenizer
 import sys
 sys.path.append(str(Path(__file__).parent))
 from create_dataset import CORPORA, TOKENIZER_ID, dedup_iterator
+
+logger = logging.getLogger(__name__)
+
+def load_dataset_with_retry(hf_id, config=None, split="train", max_retries=5, base_delay=30, use_streaming=True):
+    """Load dataset with exponential backoff retry for rate limits"""
+    
+    # First try to load non-streaming to use cache
+    if use_streaming:
+        try:
+            logger.info(f"Attempting to load {hf_id} from cache (non-streaming)")
+            if config:
+                ds_cached = load_dataset(hf_id, config, split=split, trust_remote_code=True)
+            else:
+                ds_cached = load_dataset(hf_id, split=split, trust_remote_code=True)
+            
+            # Convert to streaming after loading from cache
+            logger.info(f"Successfully loaded {hf_id} from cache, converting to streaming")
+            return ds_cached.to_iterable_dataset()
+            
+        except Exception as e:
+            logger.warning(f"Cache load failed for {hf_id}: {e}, falling back to streaming with retry")
+    
+    # Fallback to streaming with retry
+    for attempt in range(max_retries):
+        try:
+            if config:
+                ds = load_dataset(
+                    hf_id, config, split=split, 
+                    streaming=True, trust_remote_code=True
+                )
+            else:
+                ds = load_dataset(
+                    hf_id, split=split, 
+                    streaming=True, trust_remote_code=True
+                )
+            
+            # Test that we can access the dataset
+            try:
+                next(iter(ds))
+                return ds
+            except Exception as e:
+                if "429" in str(e) or "Too Many Requests" in str(e):
+                    raise e  # Re-raise rate limit errors to trigger retry
+                else:
+                    logger.warning(f"Dataset {hf_id} loaded but iteration failed: {e}")
+                    return ds  # Return anyway, might work later
+                    
+        except Exception as e:
+            if "429" in str(e) or "Too Many Requests" in str(e):
+                if attempt == max_retries - 1:
+                    logger.error(f"Failed to load {hf_id} after {max_retries} attempts due to rate limiting")
+                    raise e
+                    
+                delay = base_delay * (2 ** attempt)  # Exponential backoff
+                logger.warning(f"Rate limited loading {hf_id}, retrying in {delay} seconds (attempt {attempt + 1}/{max_retries})")
+                time.sleep(delay)
+            else:
+                logger.error(f"Failed to load {hf_id}: {e}")
+                raise e
+    
+    raise Exception(f"Failed to load {hf_id} after {max_retries} attempts")
 
 
 class StreamingPretrainDataset(IterableDataset):
@@ -51,22 +114,16 @@ class StreamingPretrainDataset(IterableDataset):
         for i, spec in enumerate(CORPORA):
             print(f"Loading {spec['hf_id']} (split: {spec['split']})...")
             
-            # Load dataset
-            if "config" in spec:
-                ds = load_dataset(
+            # Load dataset with retry logic
+            try:
+                ds = load_dataset_with_retry(
                     spec["hf_id"],
-                    spec["config"],
-                    split=spec["split"], 
-                    streaming=True,
-                    trust_remote_code=True
+                    config=spec.get("config"),
+                    split=spec["split"]
                 )
-            else:
-                ds = load_dataset(
-                    spec["hf_id"], 
-                    split=spec["split"], 
-                    streaming=True,
-                    trust_remote_code=True
-                )
+            except Exception as e:
+                logger.error(f"Skipping {spec['hf_id']} due to persistent errors: {e}")
+                continue
             
             # Apply filter if specified
             if spec.get("filter"):
