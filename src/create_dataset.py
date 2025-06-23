@@ -60,7 +60,7 @@ CORPORA = [
 
     # High-quality web fluency buffer (FineWeb HQ, ODC-BY)
     dict(hf_id="HuggingFaceFW/fineweb",             split="hq",
-         cap=7_000_000_000,
+         cap=12_000_000_000,
          filter=lambda x: x.get("language") == "en"),  # 7 B :contentReference[oaicite:9]{index=9}
 ]
 # Total: 30 B tokens
