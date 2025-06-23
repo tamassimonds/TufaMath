@@ -58,10 +58,10 @@ CORPORA = [
     dict(hf_id="HuggingFaceH4/ultrachat_200k",      split="train_sft",
          cap=2_000_000_000),     # 2 B :contentReference[oaicite:8]{index=8}
 
-    # High-quality web fluency buffer (FineWeb, ODC-BY)
-    dict(hf_id="HuggingFaceFW/fineweb",             split="train",
-         cap=7_000_000_000,
-         filter=lambda x: x.get("language") == "en"),  # 7 B :contentReference[oaicite:9]{index=9}
+    # High-quality web fluency buffer (TEMPORARILY DISABLED - rate limited)
+    # dict(hf_id="HuggingFaceFW/fineweb",             split="train",
+    #      cap=7_000_000_000,
+    #      filter=lambda x: x.get("language") == "en"),  # 7 B :contentReference[oaicite:9]{index=9}
 ]
 # Total: 30 B tokens
 
