@@ -18,8 +18,27 @@ from create_dataset import CORPORA
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+def check_dataset_cached(hf_id, config=None, split="train"):
+    """Check if dataset is already cached locally"""
+    try:
+        if config:
+            ds = load_dataset(hf_id, config, split=split, streaming=True, trust_remote_code=True)
+        else:
+            ds = load_dataset(hf_id, split=split, streaming=True, trust_remote_code=True)
+        
+        # Try to get first example quickly
+        next(iter(ds))
+        return True
+    except:
+        return False
+
 def download_with_retry(hf_id, config=None, split="train", max_retries=1, delay=0):
     """Download dataset with exponential backoff retry logic"""
+    
+    # Check if already cached
+    if check_dataset_cached(hf_id, config, split):
+        logger.info(f"✓ {hf_id} already cached, skipping download")
+        return True
     
     for attempt in range(max_retries):
         try:
