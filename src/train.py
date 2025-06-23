@@ -29,11 +29,11 @@ class TrainingConfig:
     model_config: ModelConfig = field(default_factory=ModelConfig)
     
     # Training
-    batch_size: int = 2048  # Global batch size optimized for 8xB200
+    batch_size: int = 2048  # Global batch size optimized for 8xH100
     micro_batch_size: int = 32  # Per-GPU micro batch size - standard for pretraining
     max_epochs: int = 1
     max_steps: Optional[int] = None  # Will be calculated from epochs
-    learning_rate: float = 3e-4  # Base learning rate
+    learning_rate: float = 6e-4  # Scaled for large batch size
     min_learning_rate: float = 6e-5
     weight_decay: float = 0.1
     warmup_ratio: float = 0.05  # 5% of training for warmup
@@ -45,7 +45,7 @@ class TrainingConfig:
     eps: float = 1e-8
     
     # Data
-    seq_length: int = 8192  # Utilize B200's massive memory for longer sequences
+    seq_length: int = 4096  # Optimized for H100 memory
     data_dir: str = "pretrain_dataset"
     
     # Checkpointing
@@ -127,7 +127,7 @@ def setup_model_and_optimizer(config: TrainingConfig, device):
     
     model.apply(init_weights)
     
-    # Setup FSDP
+    # Setup FSDP for H100
     mixed_precision_policy = None
     if config.mixed_precision:
         mixed_precision_policy = MixedPrecision(

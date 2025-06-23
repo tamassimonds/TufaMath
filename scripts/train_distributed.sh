@@ -5,9 +5,9 @@
 
 set -e
 
-# Configuration for 2xB200 test run
-export CUDA_VISIBLE_DEVICES=0,1
-export WORLD_SIZE=2
+# Configuration for 8xH100 setup
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export WORLD_SIZE=8
 export MASTER_ADDR=localhost
 export MASTER_PORT=12355
 
@@ -15,12 +15,12 @@ export MASTER_PORT=12355
 # export WANDB_API_KEY="your_api_key_here"  # Uncomment and set your key
 # Or just make sure it's already set in your environment
 
-# Training parameters optimized for 2xB200 test run
-BATCH_SIZE=512  # Global batch size - reasonable for 2 GPUs
+# Training parameters optimized for 8xH100
+BATCH_SIZE=2048  # Global batch size - aggressive for fast training
 MICRO_BATCH_SIZE=32  # Per-GPU micro batch size - standard for pretraining
-SEQ_LENGTH=4096  # Good context length for testing
+SEQ_LENGTH=4096  # Context length for H100 memory
 MAX_EPOCHS=1  # Train for 1 epoch
-LEARNING_RATE=3e-4  # Scaled down for smaller batch size
+LEARNING_RATE=6e-4  # Scaled up for large batch size
 
 # Paths
 DATA_DIR="pretrain_dataset"
