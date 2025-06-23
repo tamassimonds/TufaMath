@@ -23,42 +23,23 @@ from create_dataset import CORPORA, TOKENIZER_ID, dedup_iterator
 
 logger = logging.getLogger(__name__)
 
-def load_dataset_with_retry(hf_id, config=None, split="train", max_retries=5, base_delay=30, use_streaming=True):
-    """Load dataset with exponential backoff retry for rate limits"""
+def load_dataset_with_retry(hf_id, config=None, split="train", max_retries=5, base_delay=30):
+    """Load streaming dataset with exponential backoff retry for rate limits"""
     
-    # First try to load non-streaming to use cache
-    if use_streaming:
-        try:
-            logger.info(f"Attempting to load {hf_id} from cache (non-streaming)")
-            if config:
-                ds_cached = load_dataset(hf_id, config, split=split, trust_remote_code=True)
-            else:
-                ds_cached = load_dataset(hf_id, split=split, trust_remote_code=True)
-            
-            # Convert to streaming after loading from cache
-            logger.info(f"Successfully loaded {hf_id} from cache, converting to streaming")
-            return ds_cached.to_iterable_dataset()
-            
-        except Exception as e:
-            logger.warning(f"Cache load failed for {hf_id}: {e}, falling back to streaming with retry")
-    
-    # Fallback to streaming with retry
     for attempt in range(max_retries):
         try:
+            logger.info(f"Loading streaming dataset {hf_id} (attempt {attempt + 1}/{max_retries})")
+            
+            # Load streaming dataset
             if config:
-                ds = load_dataset(
-                    hf_id, config, split=split, 
-                    streaming=True, trust_remote_code=True
-                )
+                ds = load_dataset(hf_id, config, split=split, streaming=True, trust_remote_code=True)
             else:
-                ds = load_dataset(
-                    hf_id, split=split, 
-                    streaming=True, trust_remote_code=True
-                )
+                ds = load_dataset(hf_id, split=split, streaming=True, trust_remote_code=True)
             
             # Test that we can access the dataset
             try:
                 next(iter(ds))
+                logger.info(f"Successfully loaded streaming dataset {hf_id}")
                 return ds
             except Exception as e:
                 if "429" in str(e) or "Too Many Requests" in str(e):
@@ -85,8 +66,8 @@ def load_dataset_with_retry(hf_id, config=None, split="train", max_retries=5, ba
 
 class StreamingPretrainDataset(IterableDataset):
     """
-    Streaming dataset that loads the exact same data as create_dataset.py
-    but for training instead of saving to disk.
+    Dataset that loads full datasets and then streams them for training.
+    Downloads all data at initialization, then provides infinite streaming.
     """
     
     def __init__(
@@ -137,8 +118,7 @@ class StreamingPretrainDataset(IterableDataset):
                 remove_columns=ds.column_names
             )
             
-            # Take only the specified cap
-            ds = ds.take(spec["cap"] // 100)  # Rough approximation for token cap
+            # Don't artificially limit the dataset - let it stream naturally
             
             self.streams.append(ds)
             print(f"  Setup complete for {spec['hf_id']}")
@@ -183,7 +163,9 @@ class StreamingPretrainDataset(IterableDataset):
         return chunks[0] if chunks else {"input_ids": [], "attention_mask": []}
     
     def __iter__(self):
-        """Iterate through the interleaved streams"""
+        """Iterate through the interleaved streams - cycle infinitely"""
+        import itertools
+        
         # Interleave all streams
         merged = interleave_datasets(
             self.streams, 
@@ -191,10 +173,13 @@ class StreamingPretrainDataset(IterableDataset):
             seed=self.shuffle_seed
         )
         
-        # Apply deduplication if needed
-        # deduped = dedup_iterator(merged)  # Uncomment if you want deduplication
+        # Cycle the dataset infinitely to avoid running out of data
+        infinite_data = itertools.cycle(merged)
         
-        for example in merged:
+        # Apply deduplication if needed
+        # deduped = dedup_iterator(infinite_data)  # Uncomment if you want deduplication
+        
+        for example in infinite_data:
             if example["input_ids"]:  # Skip empty examples
                 yield {
                     "input_ids": torch.tensor(example["input_ids"], dtype=torch.long),

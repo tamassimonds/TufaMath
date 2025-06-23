@@ -38,13 +38,13 @@ CORPORA = [
     # #      cap=3_000_000_000,
     # #      filter=lambda x: x.get("lang") in {"python", "julia", "rust"}),  # 3 B :contentReference[oaicite:3]{index=3}
 
-    # # Human-written CoT & PoT (MIT)
-    # dict(hf_id="TIGER-Lab/MathInstruct",            split="train",
-    #      cap=2_000_000_000),     # 2 B :contentReference[oaicite:4]{index=4}
+    # Human-written CoT & PoT (MIT)
+    dict(hf_id="TIGER-Lab/MathInstruct",            split="train",
+         cap=2_000_000_000),     # 2 B :contentReference[oaicite:4]{index=4}
 
-    # # NVIDIA OpenMathReasoning (MIT; 3.2 M CoT traces)
-    # dict(hf_id="nvidia/OpenMathReasoning",          split="cot",
-    #      cap=3_000_000_000),     # 3 B :contentReference[oaicite:5]{index=5}
+    # NVIDIA OpenMathReasoning (MIT; 3.2 M CoT traces)
+    dict(hf_id="nvidia/OpenMathReasoning",          split="cot",
+         cap=3_000_000_000),     # 3 B :contentReference[oaicite:5]{index=5}
 
     # # Generic multi-domain CoT collection (CC-BY-4.0) — ↓ to 1 B
     # dict(hf_id="pharaouk/CoT-Collection",           split="train",
