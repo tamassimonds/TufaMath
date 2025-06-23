@@ -52,12 +52,21 @@ class StreamingPretrainDataset(IterableDataset):
             print(f"Loading {spec['hf_id']} (split: {spec['split']})...")
             
             # Load dataset
-            ds = load_dataset(
-                spec["hf_id"], 
-                split=spec["split"], 
-                streaming=True,
-                trust_remote_code=True
-            )
+            if "config" in spec:
+                ds = load_dataset(
+                    spec["hf_id"],
+                    spec["config"],
+                    split=spec["split"], 
+                    streaming=True,
+                    trust_remote_code=True
+                )
+            else:
+                ds = load_dataset(
+                    spec["hf_id"], 
+                    split=spec["split"], 
+                    streaming=True,
+                    trust_remote_code=True
+                )
             
             # Apply filter if specified
             if spec.get("filter"):

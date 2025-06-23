@@ -52,7 +52,7 @@ CORPORA = [
 
     # ★ NEW ★ DeepSeek-R1 distilled reasoning (CC-BY-NC-4.0)
     dict(hf_id="a-m-team/AM-DeepSeek-R1-Distilled-1.4M", split="train",
-         cap=1_000_000_000),     # ~1 B (oversample allowed) :contentReference[oaicite:7]{index=7}
+         config="am_0.9M", cap=1_000_000_000),     # ~1 B (oversample allowed) :contentReference[oaicite:7]{index=7}
 
     # Dialogue / alignment (UltraChat 200 k, MIT)
     dict(hf_id="HuggingFaceH4/ultrachat_200k",      split="train_sft",
