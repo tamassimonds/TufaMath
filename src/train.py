@@ -17,6 +17,7 @@ from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 from torch.utils.data import DataLoader, DistributedSampler
 from transformers import AutoTokenizer, get_cosine_schedule_with_warmup
 import wandb
+from tqdm import tqdm
 
 from .model import Qwen2ForCausalLM, TransformerBlock
 from .model_config import ModelConfig
@@ -200,11 +201,15 @@ def setup_data(config: TrainingConfig, tokenizer, rank, world_size):
         # We'll handle this in the dataset itself or use a wrapper
         pass
     
+    # Use fewer workers for streaming datasets to avoid shard warnings
+    num_workers = min(1, world_size)  # 1 worker max for streaming datasets
+    
     dataloader = DataLoader(
         dataset,
         batch_size=config.micro_batch_size,
-        num_workers=2,  # Reduced for streaming
+        num_workers=num_workers,
         pin_memory=True,
+        persistent_workers=False,  # Don't persist workers for streaming
     )
     
     return dataloader, None  # No sampler for IterableDataset
@@ -387,11 +392,22 @@ def main():
         tokens_per_step = config.batch_size * config.seq_length * world_size
         max_steps = estimated_total_tokens // tokens_per_step
     
+    # Create progress bar for training
+    if rank == 0:
+        pbar = tqdm(total=max_steps, desc="Training Progress", unit="step")
+        pbar.update(training_state.step)  # Update to current step if resuming
+    
     while training_state.step < max_steps:
         if train_sampler:
             train_sampler.set_epoch(training_state.epoch)
         
-        for batch_idx, batch in enumerate(train_dataloader):
+        # Create epoch progress bar for dataloader
+        dataloader_iter = iter(train_dataloader)
+        if rank == 0:
+            epoch_desc = f"Epoch {training_state.epoch} - Loading batches"
+            dataloader_iter = tqdm(dataloader_iter, desc=epoch_desc, leave=False)
+        
+        for batch_idx, batch in enumerate(dataloader_iter):
             # Move batch to device
             batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v 
                     for k, v in batch.items()}
@@ -426,6 +442,14 @@ def main():
             training_state.step += 1
             training_state.tokens_seen += config.batch_size * config.seq_length * world_size
             
+            # Update main progress bar
+            if rank == 0:
+                pbar.update(1)
+                pbar.set_postfix({
+                    'loss': f"{total_loss/max(1, training_state.step % config.log_interval):.4f}",
+                    'tokens': f"{training_state.tokens_seen/1e9:.2f}B"
+                })
+            
             # Logging
             if training_state.step % config.log_interval == 0:
                 avg_loss = total_loss / config.log_interval
@@ -437,6 +461,7 @@ def main():
                 
                 metrics = {
                     'train_loss': avg_loss,
+                    'train_perplexity': math.exp(avg_loss),
                     'learning_rate': current_lr,
                     'tokens_per_second': tokens_per_sec,
                     'tokens_seen': training_state.tokens_seen,
@@ -463,6 +488,10 @@ def main():
                 break
         
         training_state.epoch += 1
+    
+    # Close progress bar
+    if rank == 0:
+        pbar.close()
     
     # Final checkpoint
     if rank == 0:

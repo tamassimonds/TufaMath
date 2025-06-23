@@ -14,6 +14,7 @@ import torch
 from torch.utils.data import IterableDataset
 from datasets import load_dataset, interleave_datasets
 from transformers import AutoTokenizer
+from tqdm import tqdm
 
 # Import CORPORA from create_dataset.py
 import sys
@@ -111,8 +112,8 @@ class StreamingPretrainDataset(IterableDataset):
         print("Setting up streaming datasets...")
         
         self.streams = []
-        for i, spec in enumerate(CORPORA):
-            print(f"Loading {spec['hf_id']} (split: {spec['split']})...")
+        for i, spec in enumerate(tqdm(CORPORA, desc="Loading datasets", unit="dataset")):
+            logger.info(f"Loading {spec['hf_id']} (split: {spec['split']})...")
             
             # Load dataset with retry logic
             try:
